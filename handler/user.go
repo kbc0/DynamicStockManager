@@ -4,6 +4,7 @@ import (
     "github.com/gofiber/fiber/v2"
     "github.com/kbc0/DynamicStockManager/entity"
     userRepo "github.com/kbc0/DynamicStockManager/repository/user"
+    utils "github.com/kbc0/DynamicStockManager/utils"
     "golang.org/x/crypto/bcrypt"
 )
 
@@ -16,7 +17,15 @@ func NewUserHandler(repo *userRepo.UserRepository) *UserHandler {
         repo: repo,
     }
 }
+func encryptPassword(password string) string {
+    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        return ""
+    }
+    return string(hashedPassword)
+}
 
+// RegisterUser function modified to include JWT token generation
 func (h *UserHandler) RegisterUser(c *fiber.Ctx) error {
     var user entity.User
     if err := c.BodyParser(&user); err != nil {
@@ -27,18 +36,17 @@ func (h *UserHandler) RegisterUser(c *fiber.Ctx) error {
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
     }
-    return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id.Hex()})
-}
 
-func encryptPassword(password string) string {
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    // Generate JWT token
+    token, err := utils.GenerateToken(user.Username)
     if err != nil {
-        return ""
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate token"})
     }
-    return string(hashedPassword)
+
+    return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id.Hex(), "token": token})
 }
 
-// LoginUser authenticates a user and returns a token or error
+// LoginUser function modified to include JWT token generation
 func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
     var credentials struct {
         Username string `json:"username"`
@@ -59,8 +67,11 @@ func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Authentication failed"})
     }
 
-    // Here you would generate a token or session ID
-    // For simplicity, returning a simple success message
-    return c.JSON(fiber.Map{"message": "Login successful", "user": user.Username})
-}
+    // Generate JWT token
+    token, err := utils.GenerateToken(user.Username)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate token"})
+    }
 
+    return c.JSON(fiber.Map{"message": "Login successful", "token": token})
+}
