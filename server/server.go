@@ -39,5 +39,6 @@ func (srv *Server) registerRoutes() {
 	
 	// User creation endpoint
 	srv.App.Post("/api/v1/register", userHandler.RegisterUser)
+	srv.App.Post("/api/v1/login", userHandler.LoginUser)
 }
 

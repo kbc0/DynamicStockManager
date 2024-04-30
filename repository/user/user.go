@@ -58,4 +58,16 @@ func (r *UserRepository) checkUniqueFields(username, name, surname string) (bool
 	return count > 0, nil
 }
 
-// More functions can be added here for updating, deleting, and retrieving users
+// GetUserByUsername retrieves a user by username from the database
+func (r *UserRepository) GetUserByUsername(username string) (*entity.User, error) {
+	var user entity.User
+	filter := bson.M{"username": username}
+	err := r.collection.FindOne(context.TODO(), filter).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return &user, nil
+}

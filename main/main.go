@@ -28,7 +28,7 @@ func main() {
     }()
 
     // Check MongoDB connection
-    if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{"ping", 1}}).Err(); err != nil {
+    if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{Key: "ping", Value: 1}}).Err(); err != nil {
         log.Fatal(err)
     }
     fmt.Println("Successfully connected to MongoDB!")
