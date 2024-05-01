@@ -6,11 +6,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	userHandler "github.com/kbc0/DynamicStockManager/handler/user"
 	formHandler "github.com/kbc0/DynamicStockManager/handler/form"
-	fieldHandler "github.com/kbc0/DynamicStockManager/handler/field" 
+	fieldHandler "github.com/kbc0/DynamicStockManager/handler/field"
+	stockHandler "github.com/kbc0/DynamicStockManager/handler/stock" // Import the stock handler
 	"github.com/kbc0/DynamicStockManager/middleware"
 	userRepo "github.com/kbc0/DynamicStockManager/repository/user"
 	formRepo "github.com/kbc0/DynamicStockManager/repository/form"
-	fieldRepo "github.com/kbc0/DynamicStockManager/repository/field" 
+	fieldRepo "github.com/kbc0/DynamicStockManager/repository/field"
+	stockRepo "github.com/kbc0/DynamicStockManager/repository/stock" // Import the stock repository
 )
 
 type Server struct {
@@ -61,4 +63,13 @@ func (srv *Server) registerRoutes() {
 	srv.App.Get("/api/v1/form/:_id/field/:field_id", fieldHandler.GetField)
 	srv.App.Delete("/api/v1/form/:_id/field/:field_id", fieldHandler.DeleteField)
 	srv.App.Put("/api/v1/form/:_id/field/:field_id", fieldHandler.UpdateField)
+
+	// Stock related routes setup
+	stockRepo := stockRepo.NewStockRepository(srv.DB)
+	stockHandler := stockHandler.NewStockHandler(stockRepo, fieldRepo)
+	srv.App.Post("/api/v1/form/:_id/stock", stockHandler.AddStock)
+	srv.App.Get("/api/v1/form/:_id/stock", stockHandler.GetAllStocks)
+	srv.App.Get("/api/v1/form/:_id/stock/:stock_id", stockHandler.GetStock)
+	srv.App.Put("/api/v1/form/:_id/stock/:stock_id", stockHandler.UpdateStock)
+	srv.App.Delete("/api/v1/form/:_id/stock/:stock_id", stockHandler.DeleteStock)
 }
