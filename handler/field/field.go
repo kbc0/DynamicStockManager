@@ -151,28 +151,37 @@ func (h *FieldHandler) DeleteField(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Field deleted"})
 }
 
-// validateField checks for field-specific validation rules
 func validateField(field entity.Field) error {
-	// Add validation logic here based on field.Type
-	switch field.Type {
-	case entity.Combobox:
-		if len(field.Options) == 0 || len(field.Options) > 10 {
-			return errors.New("combobox must have 1 to 10 options")
-		}
-		if field.DefaultValue == nil || !contains(field.Options, field.DefaultValue.(string)) {
-			return errors.New("default value must be one of the provided options")
-		}
-	case entity.Text:
-		if field.MinValue != nil && field.MaxValue != nil && *field.MinValue > *field.MaxValue {
-			return errors.New("min value cannot be greater than max value")
-		}
-	case entity.Number, entity.NumberDecimal:
-		if field.MinValue != nil && field.MaxValue != nil && *field.MinValue > *field.MaxValue {
-			return errors.New("min value cannot be greater than max value")
-		}
-	}
+    // Add validation logic here based on field.Type
+    switch field.Type {
+    case entity.Combobox:
+        if len(field.Options) == 0 || len(field.Options) > 10 {
+            return errors.New("combobox must have 1 to 10 options")
+        }
+        if field.DefaultValue == nil || !contains(field.Options, field.DefaultValue.(string)) {
+            return errors.New("default value must be one of the provided options")
+        }
+    case entity.Text:
+        // Handling -1 as no limit for maxValue in text fields
+        if field.MinValue != nil && field.MaxValue != nil {
+            if *field.MaxValue == -1 {
+                field.MaxValue = nil // Set maxValue to nil indicating no upper limit
+            } else if *field.MinValue > *field.MaxValue {
+                return errors.New("min value cannot be greater than max value")
+            }
+        }
+    case entity.Number, entity.NumberDecimal:
+        // Handling -1 as no limit for maxValue in number and numberDecimal fields
+        if field.MinValue != nil && field.MaxValue != nil {
+            if *field.MaxValue == -1 {
+                field.MaxValue = nil // Set maxValue to nil indicating no upper limit
+            } else if *field.MinValue > *field.MaxValue {
+                return errors.New("min value cannot be greater than max value")
+            }
+        }
+    }
 
-	return nil
+    return nil
 }
 
 // contains checks if a slice contains a specific string

@@ -102,57 +102,67 @@ func (h *StockHandler) AddStock(c *fiber.Ctx) error {
 
 // validateFieldData checks if the given data is valid for the field type
 func validateFieldData(value interface{}, field entity.Field) error {
-	switch field.Type {
-	case entity.Combobox:
-		// Validate that the value is one of the options and matches the default value if specified
-		valStr, ok := value.(string)
-		if !ok {
-			return errors.New("invalid data type for combobox, expected string")
-		}
-		if !contains(field.Options, valStr) {
-			return errors.New("value not in combobox options")
-		}
-	case entity.Text:
-		// Validate that the value is a string and its length is within the min and max limits
-		valStr, ok := value.(string)
-		if !ok {
-			return errors.New("invalid data type for text, expected string")
-		}
-		if len(valStr) < *field.MinValue || (field.MaxValue != nil && len(valStr) > *field.MaxValue) {
-			return errors.New("text length outside of specified limits")
-		}
-	case entity.Checkbox:
-		// Validate that the value is a boolean
-		if _, ok := value.(bool); !ok {
-			return errors.New("invalid data type for checkbox, expected boolean")
-		}
-	case entity.Number:
-		// Validate that the value is an integer and within the specified range
-		valFloat, ok := value.(float64) // JSON numbers are decoded as float64 by default
-		if !ok {
-			return errors.New("invalid data type for number, expected integer")
-		}
-		valInt := int(valFloat) // Convert float64 to int; ensure it is a natural number
-		if float64(valInt) != valFloat {
-			return errors.New("invalid number value, expected integer without fractional part")
-		}
-		if valInt < *field.MinValue || (field.MaxValue != nil && valInt > *field.MaxValue) {
-			return errors.New("number outside of specified range")
-		}
-	case entity.NumberDecimal:
-		// Validate that the value is a float and within the specified range
-		valFloat, ok := value.(float64)
-		if !ok {
-			return errors.New("invalid data type for numberDecimal, expected decimal number")
-		}
-		if valFloat < float64(*field.MinValue) || (field.MaxValue != nil && valFloat > float64(*field.MaxValue)) {
-			return errors.New("decimal number outside of specified range")
-		}
-	default:
-		return errors.New("unknown field type")
-	}
-	return nil
+    switch field.Type {
+    case entity.Combobox:
+        valStr, ok := value.(string)
+        if !ok {
+            return errors.New("invalid data type for combobox, expected string")
+        }
+        if !contains(field.Options, valStr) {
+            return errors.New("value not in combobox options")
+        }
+
+    case entity.Text:
+        valStr, ok := value.(string)
+        if !ok {
+            return errors.New("invalid data type for text, expected string")
+        }
+        if field.MinValue != nil && len(valStr) < *field.MinValue {
+            return errors.New("text length below minimum limit")
+        }
+        if field.MaxValue != nil && *field.MaxValue != -1 && len(valStr) > *field.MaxValue {
+            return errors.New("text length exceeds maximum limit")
+        }
+
+    case entity.Checkbox:
+        if _, ok := value.(bool); !ok {
+            return errors.New("invalid data type for checkbox, expected boolean")
+        }
+
+    case entity.Number:
+        valFloat, ok := value.(float64) // JSON numbers are decoded as float64 by default
+        if !ok {
+            return errors.New("invalid data type for number, expected integer")
+        }
+        valInt := int(valFloat) // Convert float64 to int; ensure it is a natural number
+        if float64(valInt) != valFloat {
+            return errors.New("invalid number value, expected integer without fractional part")
+        }
+        if field.MinValue != nil && valInt < *field.MinValue {
+            return errors.New("number below minimum limit")
+        }
+        if field.MaxValue != nil && *field.MaxValue != -1 && valInt > *field.MaxValue {
+            return errors.New("number exceeds maximum limit")
+        }
+
+    case entity.NumberDecimal:
+        valFloat, ok := value.(float64)
+        if !ok {
+            return errors.New("invalid data type for numberDecimal, expected decimal number")
+        }
+        if field.MinValue != nil && valFloat < float64(*field.MinValue) {
+            return errors.New("decimal number below minimum limit")
+        }
+        if field.MaxValue != nil && *field.MaxValue != -1 && valFloat > float64(*field.MaxValue) {
+            return errors.New("decimal number exceeds maximum limit")
+        }
+
+    default:
+        return errors.New("unknown field type")
+    }
+    return nil
 }
+
 
 // contains checks if a slice contains a specific string
 func contains(slice []string, item string) bool {
