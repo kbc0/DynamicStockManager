@@ -7,16 +7,23 @@ import (
 	"github.com/google/uuid"
 	"github.com/kbc0/DynamicStockManager/entity"
 	"github.com/kbc0/DynamicStockManager/repository/form"
+	fieldRepo "github.com/kbc0/DynamicStockManager/repository/field"
+	stockRepo "github.com/kbc0/DynamicStockManager/repository/stock"
+
 	utils "github.com/kbc0/DynamicStockManager/utils"
 )
 
 type FormHandler struct {
 	repo *repository.FormRepository
+	fieldRepo *fieldRepo.FieldRepository
+	stockRepo *stockRepo.StockRepository
 }
 
-func NewFormHandler(repo *repository.FormRepository) *FormHandler {
+func NewFormHandler(repo *repository.FormRepository, fieldRepo *fieldRepo.FieldRepository, stockRepo *stockRepo.StockRepository) *FormHandler {
 	return &FormHandler{
 		repo: repo,
+		fieldRepo: fieldRepo,
+		stockRepo: stockRepo,
 	}
 }
 
@@ -87,14 +94,27 @@ func (h *FormHandler) UpdateFormHandler(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Form updated"})
 }
 
-// DeleteFormHandler handles the deletion of a form
+// DeleteFormHandler handles the deletion of a form and all its related fields and stocks
 func (h *FormHandler) DeleteFormHandler(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("_id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid ID format"})
-	}
-	if err := h.repo.DeleteForm(id); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Form deleted"})
+    id, err := uuid.Parse(c.Params("_id"))
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid ID format"})
+    }
+
+    // First, delete all fields associated with the form
+    if err := h.fieldRepo.DeleteFieldsByFormID(id); err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+    }
+
+    // Then, delete all stocks associated with the form
+    if err := h.stockRepo.DeleteStocksByFormID(id); err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+    }
+
+    // Finally, delete the form itself
+    if err := h.repo.DeleteForm(id); err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Form and all related data deleted"})
 }

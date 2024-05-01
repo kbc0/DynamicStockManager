@@ -81,3 +81,10 @@ func (r *StockRepository) CheckUniqueField(formID uuid.UUID, fieldName string, v
 	// Return true if any documents are found, indicating the value is not unique
 	return count > 0, nil
 }
+
+// DeleteStocksByFormID deletes all stocks associated with a specific form ID
+func (r *StockRepository) DeleteStocksByFormID(formID uuid.UUID) error {
+    _, err := r.collection.DeleteMany(context.TODO(), bson.M{"formId": formID})
+    return err
+}
+

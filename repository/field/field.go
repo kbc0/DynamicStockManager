@@ -86,3 +86,9 @@ func (r *FieldRepository) DeleteField(id uuid.UUID) error {
     _, err := r.collection.DeleteOne(context.TODO(), bson.M{"_id": id})
     return err
 }
+
+// DeleteFieldsByFormID deletes all fields associated with a specific form ID
+func (r *FieldRepository) DeleteFieldsByFormID(formID uuid.UUID) error {
+    _, err := r.collection.DeleteMany(context.TODO(), bson.M{"formId": formID})
+    return err
+}

@@ -46,15 +46,6 @@ func (srv *Server) registerRoutes() {
 	srv.App.Post("/api/v1/login", userHandler.LoginUser)
 	srv.App.Get("/api/v1/account", userHandler.GetAccount)
 
-	// Form related routes setup
-	formRepo := formRepo.NewFormRepository(srv.DB)
-	formHandler := formHandler.NewFormHandler(formRepo)
-	srv.App.Post("/api/v1/form/create", formHandler.CreateFormHandler)
-	srv.App.Get("/api/v1/form", formHandler.GetFormsHandler)
-	srv.App.Get("/api/v1/form/:_id", formHandler.GetFormHandler)
-	srv.App.Put("/api/v1/form/:_id", formHandler.UpdateFormHandler)
-	srv.App.Delete("/api/v1/form/:_id", formHandler.DeleteFormHandler)
-
 	// Field related routes setup
 	fieldRepo := fieldRepo.NewFieldRepository(srv.DB)
 	fieldHandler := fieldHandler.NewFieldHandler(fieldRepo)
@@ -72,4 +63,14 @@ func (srv *Server) registerRoutes() {
 	srv.App.Get("/api/v1/form/:_id/stock/:stock_id", stockHandler.GetStock)
 	srv.App.Put("/api/v1/form/:_id/stock/:stock_id", stockHandler.UpdateStock)
 	srv.App.Delete("/api/v1/form/:_id/stock/:stock_id", stockHandler.DeleteStock)
+
+	// Form related routes setup
+	formRepo := formRepo.NewFormRepository(srv.DB)
+	formHandler := formHandler.NewFormHandler(formRepo,fieldRepo, stockRepo)
+	srv.App.Post("/api/v1/form/create", formHandler.CreateFormHandler)
+	srv.App.Get("/api/v1/form", formHandler.GetFormsHandler)
+	srv.App.Get("/api/v1/form/:_id", formHandler.GetFormHandler)
+	srv.App.Put("/api/v1/form/:_id", formHandler.UpdateFormHandler)
+	srv.App.Delete("/api/v1/form/:_id", formHandler.DeleteFormHandler)
+
 }
