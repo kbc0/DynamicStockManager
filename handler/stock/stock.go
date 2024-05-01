@@ -40,32 +40,47 @@ func (h *StockHandler) AddStock(c *fiber.Ctx) error {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
     }
 
-    // Prepare to validate data and check for extraneous fields
     fieldMap := make(map[string]entity.Field)
+    uniqueFields := make(map[string]interface{}) // Map to store the values of unique fields
+
     for _, field := range fields {
         fieldMap[field.Name] = field
+        if field.IsUnique {
+            uniqueFields[field.Name] = nil
+        }
     }
 
-    // Use default values for missing fields and validate all provided fields
+    // Validate and prepare data
     for key, value := range data {
         field, exists := fieldMap[key]
         if !exists {
             return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid field provided: " + key})
         }
+
         if err := validateFieldData(value, field); err != nil {
             return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
         }
+
+        if field.IsUnique {
+            // Check if the value already exists in other stocks
+            exists, err := h.repo.CheckUniqueField(field.FormID, key, value)
+            if err != nil {
+                return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+            }
+            if exists {
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Value for " + key + " must be unique"})
+            }
+            uniqueFields[key] = value
+        }
     }
 
-    // Check for required fields and use default values where appropriate
+    // Use default values for missing fields
     for fieldName, field := range fieldMap {
-        if _, ok := data[fieldName]; !ok {
-            if !field.IsHidden { // If field is not hidden and data not provided
-                if field.DefaultValue != nil {
-                    data[fieldName] = field.DefaultValue // Use the default value
-                } else {
-                    return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing required field: " + fieldName})
-                }
+        if _, ok := data[fieldName]; !ok && !field.IsHidden {
+            if field.DefaultValue != nil {
+                data[fieldName] = field.DefaultValue
+            } else {
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing required field: " + fieldName})
             }
         }
     }
@@ -79,7 +94,7 @@ func (h *StockHandler) AddStock(c *fiber.Ctx) error {
     }
 
     if err := h.repo.CreateStock(stock); err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
     }
 
     return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Stock added"})

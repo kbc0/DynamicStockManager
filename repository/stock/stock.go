@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/kbc0/DynamicStockManager/entity"
 	"go.mongodb.org/mongo-driver/bson"
@@ -42,7 +43,7 @@ func (r *StockRepository) GetAllStocksByFormId(formId uuid.UUID) ([]entity.Stock
 	for cursor.Next(context.Background()) {
 		var stock entity.Stock
 		if err := cursor.Decode(&stock); err != nil {
-			return nil, err 
+			return nil, err
 		}
 		stocks = append(stocks, stock)
 	}
@@ -51,7 +52,6 @@ func (r *StockRepository) GetAllStocksByFormId(formId uuid.UUID) ([]entity.Stock
 	}
 	return stocks, nil
 }
-
 
 func (r *StockRepository) UpdateStock(stock entity.Stock) error {
 	filter := bson.M{"_id": stock.ID}
@@ -63,4 +63,21 @@ func (r *StockRepository) UpdateStock(stock entity.Stock) error {
 func (r *StockRepository) DeleteStock(id uuid.UUID) error {
 	_, err := r.collection.DeleteOne(context.Background(), bson.M{"_id": id})
 	return err
+}
+
+func (r *StockRepository) CheckUniqueField(formID uuid.UUID, fieldName string, value interface{}) (bool, error) {
+	// Construct the query to check if any stock exists with the given field having the specific value within the same form
+	query := bson.M{
+		"formId":            formID,
+		"data." + fieldName: value,
+	}
+
+	// Perform a count operation to determine if any documents match the query
+	count, err := r.collection.CountDocuments(context.Background(), query)
+	if err != nil {
+		return false, err
+	}
+
+	// Return true if any documents are found, indicating the value is not unique
+	return count > 0, nil
 }
