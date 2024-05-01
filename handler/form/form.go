@@ -39,7 +39,7 @@ func (h *FormHandler) CreateFormHandler(c *fiber.Ctx) error {
 	if err := h.repo.CreateForm(form); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Form created"})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"ID":form.ID.String(),"message": "Form created"})
 }
 
 // GetFormsHandler retrieves all forms for the authenticated user

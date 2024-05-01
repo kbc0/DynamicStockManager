@@ -15,7 +15,7 @@ func RegisterMiddleware(app *fiber.App) {
 
 	// JWT Middleware for protected routes
 	app.Use(jwtware.New(jwtware.Config{
-		SigningKey: []byte("secret"), // Replace 'secret' with your actual secret key
+		SigningKey: []byte("secret"), 
 		Filter: func(ctx *fiber.Ctx) bool {
 			// List of routes that don't require authentication
 			unprotectedPaths := []string{
