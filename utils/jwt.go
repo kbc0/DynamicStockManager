@@ -1,15 +1,18 @@
 package utils
 
 import (
-    "github.com/golang-jwt/jwt/v4"
-    "time"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 )
 
-// GenerateToken creates a JWT token for authenticated users
-func GenerateToken(username string) (string, error) {
+// GenerateToken creates a JWT token for authenticated users including their UUID
+func GenerateToken(userID uuid.UUID, username string) (string, error) {
     token := jwt.New(jwt.SigningMethodHS256)
     claims := token.Claims.(jwt.MapClaims)
 
+    claims["userID"] = userID.String() // Include UUID in the token
     claims["username"] = username
     claims["exp"] = time.Now().Add(time.Hour * 144).Unix() // Token expires after 144 hours
 
@@ -19,7 +22,6 @@ func GenerateToken(username string) (string, error) {
     }
     return tokenString, nil
 }
-
 // VerifyToken verifies the JWT token and returns the claims if the token is valid
 func VerifyToken(tokenString string) (jwt.MapClaims, error) {
 	

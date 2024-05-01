@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/kbc0/DynamicStockManager/entity"
 	userRepo "github.com/kbc0/DynamicStockManager/repository/user"
 	utils "github.com/kbc0/DynamicStockManager/utils"
@@ -28,6 +29,7 @@ func encryptPassword(password string) string {
 // RegisterUser function modified to include JWT token generation
 func (h *UserHandler) RegisterUser(c *fiber.Ctx) error {
 	var user entity.User
+	user.ID = uuid.New()
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 	}
@@ -44,7 +46,7 @@ func (h *UserHandler) RegisterUser(c *fiber.Ctx) error {
 	}
 
 	// Generate JWT token
-	token, err := utils.GenerateToken(user.Username)
+	token, err := utils.GenerateToken(user.ID, user.Username)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate token"})
 	}
@@ -74,7 +76,7 @@ func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
 	}
 
 	// Generate JWT token
-	token, err := utils.GenerateToken(user.Username)
+	token, err := utils.GenerateToken(user.ID, user.Username)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate token"})
 	}
@@ -116,7 +118,7 @@ func (h *UserHandler) GetAccount(c *fiber.Ctx) error {
 		Name     string `json:"name"`
 		Surname  string `json:"surname"`
 	}{
-		ID:       user.ID.Hex(),
+		ID:       user.ID.String(),
 		Username: user.Username,
 		Name:     user.Name,
 		Surname:  user.Surname,

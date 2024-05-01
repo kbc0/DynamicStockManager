@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/kbc0/DynamicStockManager/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"github.com/kbc0/DynamicStockManager/entity" // adjust the import path according to your project structure
 )
 
 type UserRepository struct {
