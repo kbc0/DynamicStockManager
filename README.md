@@ -21,7 +21,7 @@ DynamicStockManager is a comprehensive management system designed for managing d
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/DynamicStockManager.git
+   git clone https://github.com/kbc0/DynamicStockManager.git
    cd DynamicStockManager
 	
 2. Set up your MongoDB database and ensure it is running.
