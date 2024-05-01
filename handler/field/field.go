@@ -48,35 +48,48 @@ func (h *FieldHandler) AddFieldToForm(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Field added to form"})
 }
 
-// GetAllFields retrieves all fields for a form
 func (h *FieldHandler) GetAllFields(c *fiber.Ctx) error {
-	formID, err := uuid.Parse(c.Params("_id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid form ID format"})
-	}
+    formID, err := uuid.Parse(c.Params("_id"))
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid form ID format"})
+    }
 
-	fields, err := h.repo.GetFieldsByFormID(formID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
+    fields, err := h.repo.GetFieldsByFormID(formID)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+    }
 
-	return c.JSON(fields)
+    // Filter out hidden fields
+    visibleFields := []entity.Field{}
+    for _, field := range fields {
+        if !field.IsHidden {
+            visibleFields = append(visibleFields, field)
+        }
+    }
+
+    return c.JSON(visibleFields)
 }
 
-// GetField retrieves a single field by ID
+
 func (h *FieldHandler) GetField(c *fiber.Ctx) error {
-	fieldID, err := uuid.Parse(c.Params("field_id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid field ID format"})
-	}
+    fieldID, err := uuid.Parse(c.Params("field_id"))
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid field ID format"})
+    }
 
-	field, err := h.repo.GetFieldByID(fieldID)
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Field not found"})
-	}
+    field, err := h.repo.GetFieldByID(fieldID)
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Field not found"})
+    }
 
-	return c.JSON(field)
+    // Check if the field is hidden
+    if field.IsHidden {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "This is a hidden field"})
+    }
+
+    return c.JSON(field)
 }
+
 
 // UpdateField updates a specific field
 func (h *FieldHandler) UpdateField(c *fiber.Ctx) error {
